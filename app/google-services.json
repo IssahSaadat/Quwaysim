@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "589226391108",
+    "firebase_url": "https://smis-1234.firebaseio.com",
+    "project_id": "smis-1234",
+    "storage_bucket": "smis-1234.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589226391108:android:b9bf1f12c25b160a",
+        "android_client_info": {
+          "package_name": "com.smis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "589226391108-fjqpm9f1m6qpbir2jbdjtu16o5so79bg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.smis",
+            "certificate_hash": "1f37ec3d34c72d6a5cee32b1982b83a8fd101985"
+          }
+        },
+        {
+          "client_id": "589226391108-lmuqno2ov8osif6o1h8i42rag3icou95.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz9-OMt3bfHH7qvsHsjM7u58GZi5xJDKE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589226391108-lmuqno2ov8osif6o1h8i42rag3icou95.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
