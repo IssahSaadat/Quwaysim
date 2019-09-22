@@ -216,7 +216,6 @@ public class ChatActivity extends AppCompatActivity {
                         Log.e(TAG, "onDataChange: NullPointerException: " + e.getMessage() );
                     }
                 }
-
             }
 
             @Override

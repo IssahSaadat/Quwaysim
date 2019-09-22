@@ -70,7 +70,6 @@ public class SettingsActivity extends AppCompatActivity implements ChangePhotoDi
     public String studentProfilePic = "https://firebasestorage.googleapis.com/v0/b/smis-1234.appspot.com/o/profile_pics%2Fstudents.jpg?alt=media&token=a6ac3b2a-995f-460b-8afe-cec8d2a7a203";
     Uri uriNew;
 
-    //TODO get this method to work if compression does'nt go well
     // convert from bitmap to byte array
     public static byte[] getBytesFromBitmap(Bitmap bitmap, int quality) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

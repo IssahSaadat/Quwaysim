@@ -113,7 +113,7 @@ public class LoginActivity extends AppCompatActivity {
 
                     } else {
                         Toast.makeText(LoginActivity.this, "Please Check Your Email Inbox for Verification Link ", Toast.LENGTH_LONG).show();
-                        //TODO watch out for this commented code (Firebase SignOut)!!
+                        //Quwaysim watch out for this commented code (Firebase SignOut)!!
                         //FirebaseAuth.getInstance().signOut();
                     }
                 } else {

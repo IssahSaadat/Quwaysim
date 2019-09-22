@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,48 +29,47 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-public class NewChatroomDialog extends DialogFragment {
-    private static final String TAG = "NewChatroomDialog";
-
-    private SeekBar mSeekBar;
-    private EditText mChatroomName;
-    private TextView mCreateChatroom, mSecurityLevel;
+public class NewQuizDialog extends DialogFragment {
+    private static final String TAG = "NewQuizDialog";
+    //private SeekBar mSeekBar;
+    private EditText mQuizName;
+    private TextView mCreateQuiz, mSecurityLevel;
     private int mUserSecurityLevel;
-    private int mSeekProgress;
+    //private int mSeekProgress;
 
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = getActivity().getLayoutInflater().inflate(R.layout.dialog_new_chatroom, container, false);
-        mChatroomName = view.findViewById(R.id.input_quiz_name);
-        mSeekBar = view.findViewById(R.id.input_security_level);
-        mCreateChatroom = view.findViewById(R.id.create_quiz);
-        mSecurityLevel = view.findViewById(R.id.security_level);
-        mSeekProgress = 0;
-        mSecurityLevel.setText(String.valueOf(mSeekProgress));
+        mQuizName = view.findViewById(R.id.input_quiz_name);
+        //mSeekBar = view.findViewById(R.id.input_security_level);
+        mCreateQuiz = view.findViewById(R.id.create_quiz);
+        //mSecurityLevel = view.findViewById(R.id.security_level);
+        //mSeekProgress = 0;
+        //mSecurityLevel.setText(String.valueOf(mSeekProgress));
         getUserSecurityLevel();
 
-        mCreateChatroom.setOnClickListener(new View.OnClickListener() {
+        mCreateQuiz.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                if (!mChatroomName.getText().toString().equals("")) {
+                if (!mQuizName.getText().toString().equals("")) {
                     Log.d(TAG, "onClick: creating new chat room");
 
 
-                    if (mUserSecurityLevel >= mSeekBar.getProgress()) {
+                    if (mUserSecurityLevel >= 2) {
 
                         DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
                         //get the new chatroom unique id
                         String chatroomId = reference
-                                .child(getString(R.string.dbnode_chatrooms))
+                                .child(getString(R.string.dbnode_quizzes))
                                 .push().getKey();
 
                         //create the chatroom
                         Chatroom chatroom = new Chatroom();
-                        chatroom.setSecurity_level(String.valueOf(mSeekBar.getProgress()));
-                        chatroom.setChatroom_name(mChatroomName.getText().toString());
+                        //chatroom.setSecurity_level(String.valueOf(mSeekBar.getProgress()));
+                        chatroom.setChatroom_name(mQuizName.getText().toString());
                         chatroom.setCreator_id(FirebaseAuth.getInstance().getCurrentUser().getUid());
                         chatroom.setChatroom_id(chatroomId);
 
@@ -112,23 +110,23 @@ public class NewChatroomDialog extends DialogFragment {
             }
         });
 
-        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                mSeekProgress = i;
-                mSecurityLevel.setText(String.valueOf(mSeekProgress));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
+//        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+//                mSeekProgress = i;
+//                mSecurityLevel.setText(String.valueOf(mSeekProgress));
+//            }
+//
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {
+//
+//            }
+//
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {
+//
+//            }
+//        });
 
         return view;
     }

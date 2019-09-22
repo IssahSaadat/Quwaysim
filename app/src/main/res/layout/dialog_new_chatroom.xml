@@ -26,7 +26,7 @@
             android:layout_below="@+id/textChatroomName"
             android:layout_marginTop="10dp"
             android:textSize="15sp"
-            android:id="@+id/input_chatroom_name"/>
+            android:id="@+id/input_quiz_name"/>
 
     </RelativeLayout>
 
@@ -82,6 +82,6 @@
         android:layout_marginTop="20dp"
         android:layout_marginEnd="20dp"
         android:textColor="@color/colorPrimary"
-        android:id="@+id/create_chatroom"/>
+        android:id="@+id/create_quiz"/>
 
 </RelativeLayout>

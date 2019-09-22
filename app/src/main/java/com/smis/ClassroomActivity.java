@@ -9,7 +9,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -19,12 +18,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageMetadata;
@@ -35,15 +31,17 @@ import com.smis.utilities.UniversalImageLoader;
 
 public class ClassroomActivity extends AppCompatActivity implements UploadFileDialog.OnFileReceivedListener {
     int FILE_SELECT_CODE = 0;
+    ProgressBar mProgressBar;
+    Boolean okay = false;
+    StorageReference sReference = FirebaseStorage.getInstance().getReference();
+
     private String TAG = "ClassroomActivity";
     private FirebaseAuth.AuthStateListener mAuthListener;
     private Uri mSelectedFileUri;
     private double progress;
-    ProgressBar mProgressBar;
-    StorageReference sReference = FirebaseStorage.getInstance().getReference();
     private RecyclerView mRecyclerView;
+    private RecyclerView.LayoutManager mLayoutManager;
 
-    Button download;
     @Override
     public void getFilePath(Uri filePath) {
         if (!filePath.toString().equals("")) {
@@ -63,21 +61,17 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
         FloatingActionButton select_file = findViewById(R.id.select_file_fab);
         mProgressBar = findViewById(R.id.upload_progressBar);
         mRecyclerView = findViewById(R.id.rv_row);
-        download = findViewById(R.id.download);
+        /*
+         * RecyclerView Implementation
+         */
+        mRecyclerView = findViewById(R.id.rv_row);
 
-        download.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v) {
-                downloadFile();
-            }
-        });
 
         select_file.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 UploadFileDialog dialog = new UploadFileDialog();
                 dialog.show(getSupportFragmentManager(), getString(R.string.dialog_upload_file));
-                //Toast.makeText(ClassroomActivity.this, "File selected, Please press the upload button to begin upload", Toast.LENGTH_SHORT).show();
             }
         });
         upload_file.setOnClickListener((new View.OnClickListener() {
@@ -90,8 +84,6 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
                 }
             }
         }));
-
-
         initImageLoader();
     }
 
@@ -110,56 +102,43 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
         }
     }
 
-    public void downloadFile(){
-        sReference.child("classroom/" + FirebaseAuth.getInstance().getCurrentUser().getUid()).getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-            @Override
-            public void onSuccess(Uri uri) {
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
-                ref.child(getString(R.string.dbnode_users)).child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                .child(getString(R.string.field_profile_image)).setValue(uri.toString());
-                Toast.makeText(ClassroomActivity.this, "download url at: " + uri.toString(), Toast.LENGTH_SHORT).show();
-                // Got the download URL for 'users/me/profile.png'
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception exception) {
-                Toast.makeText(ClassroomActivity.this, "Download Failed. Please Try Again Later", Toast.LENGTH_SHORT).show();
-                // Handle any errors
-            }
-        });
-    }
-
+    //This method is used to start the upload task to the firebase storage
     private void executeUploadTask() {
         showProgressBar();
-        //FilePaths filePaths = new FilePaths();
+
         //specify where the photo will be stored
+        /*TODO this StorageReference replaces pdf files uploaded to the storage, separate paths needs to be given to each files
+         *TODO --> So that the files wont replace each other on the Firebase storage
+         *TODO --> You may change the storage directory to suit your taste
+         */
         final StorageReference storageReference = FirebaseStorage.getInstance().getReference()
-                .child("classroom/" + FirebaseAuth.getInstance().getCurrentUser().getUid()); //just replace the old image with the new one
+                .child("classroom/" + Math.random() * 100000 + mSelectedFileUri.getPathSegments().get(0) + ".pdf");
 
         // Create file metadata including the content type
         StorageMetadata metadata = new StorageMetadata.Builder()
                 .setContentType("classroom/files")
                 .setContentLanguage("en") //see nodes below
                 .build();
+
         //if the file size is valid then we can submit to database
         UploadTask uploadTask = null;
         uploadTask = storageReference.putFile(mSelectedFileUri, metadata);
         //uploadTask = storageReference.putBytes(mBytes); //without metadata
 
-
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 //Now insert the download url into the firebase database
-                Task<Uri> firebaseURL = taskSnapshot.getStorage().getDownloadUrl();
+                //Task<Uri> firebaseURL = taskSnapshot.getStorage().getDownloadUrl();
                 Toast.makeText(ClassroomActivity.this, "Upload Success", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "onSuccess: firebase download url = " + firebaseURL.toString());
-                FirebaseDatabase.getInstance().getReference()
-                        .child(getString(R.string.dbnode_users))
-                        .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                        .child(getString(R.string.field_profile_image))
-                        .setValue(firebaseURL.toString());
-
+                okay = true;
+                //mSelectedFileUri = null;
+                //Log.d("newTag", "onSuccess: firebase download url = " + firebaseURL.toString());
+//                FirebaseDatabase.getInstance().getReference()
+//                        .child(getString(R.string.dbnode_users))
+//                        .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+//                        .child(getString(R.string.field_profile_image))
+//                        .setValue(firebaseURL.toString());
                 hideProgressBar();
             }
         }).addOnFailureListener(new OnFailureListener() {
@@ -177,7 +156,6 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
                     Log.d(TAG, "onProgress: Upload is " + progress + "% done");
                     Toast.makeText(ClassroomActivity.this, progress + "%", Toast.LENGTH_SHORT).show();
                 }
-
             }
         });
     }
@@ -294,4 +272,33 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
             mProgressBar.setVisibility(View.INVISIBLE);
         }
     }
+
+
+
+
+
+    /*
+     * This method here is for testing purposes only
+     */
+//    public String downloadFile() {
+//
+//        sReference.child("classroom/" + FirebaseAuth.getInstance().getCurrentUser().getUid()).getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+//            @Override
+//            public void onSuccess(Uri uri) {
+//                downloadURL = uri.toString();
+//                //DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+//                //ref.child(getString(R.string.dbnode_users)).child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+//                //.child(getString(R.string.field_profile_image)).setValue(uri.toString());
+//                Toast.makeText(ClassroomActivity.this, "download url at: " + uri.toString(), Toast.LENGTH_SHORT).show();
+//                // Got the download URL for 'users/me/profile.png'
+//            }
+//        }).addOnFailureListener(new OnFailureListener() {
+//            @Override
+//            public void onFailure(@NonNull Exception exception) {
+//                Toast.makeText(ClassroomActivity.this, "Download Failed. Please Try Again Later", Toast.LENGTH_SHORT).show();
+//                // Handle any errors
+//            }
+//        });
+//        return downloadURL;
+//    }
 }

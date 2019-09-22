@@ -25,7 +25,7 @@ import static android.text.TextUtils.isEmpty;
 
 public class SignUpActivity extends AppCompatActivity {
     //domain name for school email address
-    //TODO change the domain name(s) back to futminna's
+    //Quwaysim change the domain name(s) back to futminna's
     private static final String lecturers_domain_name = "gmail.com";
     private static final String students_domain_name = "st.futminna.edu.ng";
     //widgets
@@ -151,7 +151,7 @@ public class SignUpActivity extends AppCompatActivity {
     //redirects to the sign in activity
     public void redirectToSignIn() {
         Intent intent = new Intent(SignUpActivity.this, LoginActivity.class);
-        //TODO populate the sign In activity editTexts with the email and password
+        //Quwaysim populate the sign In activity editTexts with the email and password
         //intent.putExtra(mEmail.getText().toString(),)
         startActivity(intent);
         finish();

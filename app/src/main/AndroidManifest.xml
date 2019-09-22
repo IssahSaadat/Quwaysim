@@ -12,7 +12,6 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
         <activity android:name=".SetQuestionsActivity"></activity>
-        <activity android:name=".AddQuestionsActivity" />
         <activity android:name=".AutomataSimulatorActivity" />
         <activity android:name=".QuizActivity" />
         <activity android:name=".ChatActivity" />
