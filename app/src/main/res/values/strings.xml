@@ -106,4 +106,6 @@
     <string name="file_name">File Name</string>
     <string name="creator">creator</string>
     <string name="automata_simulator">Automata Simulator</string>
+    <string name="write_file">This app needs access to your file storage so that it can write files.</string>
+
 </resources>

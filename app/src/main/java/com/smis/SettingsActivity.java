@@ -265,7 +265,7 @@ public class SettingsActivity extends AppCompatActivity implements ChangePhotoDi
         switch (requestCode) {
             case REQUEST_CODE:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG, "onRequestPermissionsResult: User has allowed permission to access: " + permissions[0]);
+                    Log.d(TAG, "onRequestPermissionsResult: Users has allowed permission to access: " + permissions[0]);
 
                 }
                 break;
@@ -305,13 +305,13 @@ public class SettingsActivity extends AppCompatActivity implements ChangePhotoDi
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-                    // User is signed in
+                    // Users is signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                     //toastMessage("Successfully signed in with: " + user.getEmail());
 
 
                 } else {
-                    // User is signed out
+                    // Users is signed out
                     Log.d(TAG, "onAuthStateChanged:signed_out");
                     Toast.makeText(SettingsActivity.this, "Signed out", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
@@ -390,7 +390,7 @@ public class SettingsActivity extends AppCompatActivity implements ChangePhotoDi
                     }
 
 
-                    Log.d("profile", "User data: " + user.getSecurity_level());
+                    Log.d("profile", "Users data: " + user.getSecurity_level());
                     //Toast.makeText(SettingsActivity.this, "download url at: " + uriNew, Toast.LENGTH_SHORT).show();
                 }
             }

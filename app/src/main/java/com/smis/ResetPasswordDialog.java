@@ -73,7 +73,7 @@ public class ResetPasswordDialog extends DialogFragment {
                                     Toast.LENGTH_SHORT).show();
                         } else {
                             Log.d(TAG, "onComplete: No user associated with that email.");
-                            Toast.makeText(mContext, "No User is Associated with that Email",
+                            Toast.makeText(mContext, "No Users is Associated with that Email",
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
