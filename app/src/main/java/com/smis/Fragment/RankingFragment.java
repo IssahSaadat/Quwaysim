@@ -46,7 +46,7 @@ public class RankingFragment extends Fragment {
     }
 
     public RankingFragment() {
-        // Required empty public constructor
+
     }
 
     @Override
