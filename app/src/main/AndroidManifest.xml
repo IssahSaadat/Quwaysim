@@ -3,6 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.smis">
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -11,11 +22,17 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".SetQuestionsActivity"></activity>
+        <activity android:name=".AddQuizActivity"></activity>
+        <activity android:name=".DownloadActivity" />
+        <activity android:name=".SetQuestionsActivity" />
         <activity android:name=".AutomataSimulatorActivity" />
         <activity android:name=".QuizActivity" />
         <activity android:name=".ChatActivity" />
         <activity android:name=".SettingsActivity" />
+        <activity android:name=".ScoreDetail"/>
+        <activity android:name=".Done"/>
+        <activity android:name=".Playing"/>
+        <activity android:name=".Start"/>
         <!--
 <service android:name=".utility.MyFirebaseMessagingService">
             <intent-filter>
@@ -42,15 +59,5 @@
             </intent-filter>
         </activity>
     </application>
-
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="true" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.INTERNET" />
-
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
 </manifest>

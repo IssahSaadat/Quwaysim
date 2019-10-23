@@ -1,6 +1,6 @@
 package com.smis;
 
-import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,22 +14,39 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
-import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.nostra13.universalimageloader.core.ImageLoader;
+import com.smis.models.Files;
+import com.smis.models.Users;
+import com.smis.utilities.FilesAdapter;
 import com.smis.utilities.UniversalImageLoader;
+import com.smis.utilities.User;
 
-public class ClassroomActivity extends AppCompatActivity implements UploadFileDialog.OnFileReceivedListener {
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Random;
+
+public class ClassroomActivity extends AppCompatActivity{
     int FILE_SELECT_CODE = 0;
     ProgressBar mProgressBar;
     Boolean okay = false;
@@ -37,19 +54,29 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
 
     private String TAG = "ClassroomActivity";
     private FirebaseAuth.AuthStateListener mAuthListener;
-    private Uri mSelectedFileUri;
+    private Uri mSelectedFileUrl;
     private double progress;
     private RecyclerView mRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
+    String UserName, userId, FileUrl, FileName, FilePath;
+    private DatabaseReference mDatabase, reference;
+    private FirebaseDatabase firebaseDatabase;
+    private ProgressDialog pDialog;
+    private long date;
+    ArrayList<Files> list;
+    FilesAdapter adapter;
+    private final int PICK_IMAGE_REQUEST = 71;
+    DatabaseReference users;
+    DatabaseReference category;
 
-    @Override
+   /* @Override
     public void getFilePath(Uri filePath) {
         if (!filePath.toString().equals("")) {
-            mSelectedFileUri = filePath;
-            Log.d("TAG", "getFilePath: got the file uri: " + mSelectedFileUri);
+            mSelectedFileUrl = filePath;
+            Log.d("TAG", "getFilePath: got the file uri: " + mSelectedFileUrl);
             //ImageLoader.getInstance().displayImage(filePath.toString(), mProfile_image);
         }
-    }
+    } */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,8 +84,11 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
         setContentView(R.layout.activity_classroom);
         Log.d("TAG", "onCreate Started");
         setupFirebaseAuth();
+        reference = FirebaseDatabase.getInstance().getReference().child("files");
         FloatingActionButton upload_file = findViewById(R.id.upload_file_fab);
         FloatingActionButton select_file = findViewById(R.id.select_file_fab);
+
+        users = FirebaseDatabase.getInstance().getReference("users");
         mProgressBar = findViewById(R.id.upload_progressBar);
         mRecyclerView = findViewById(R.id.rv_row);
         /*
@@ -66,53 +96,189 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
          */
         mRecyclerView = findViewById(R.id.rv_row);
 
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        date = new Date().getTime();
+
 
         select_file.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                UploadFileDialog dialog = new UploadFileDialog();
-                dialog.show(getSupportFragmentManager(), getString(R.string.dialog_upload_file));
+
+                Intent intent = new Intent();
+                intent.setType("*/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select File"), PICK_IMAGE_REQUEST);
+                //UploadFileDialog dialog = new UploadFileDialog();
+                //dialog.show(getSupportFragmentManager(), getString(R.string.dialog_upload_file));
             }
         });
-        upload_file.setOnClickListener((new View.OnClickListener() {
+        /*upload_file.setOnClickListener((new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mSelectedFileUri != null) {
+                if (mSelectedFileUrl != null) {
                     executeUploadTask();
                 } else {
                     Toast.makeText(ClassroomActivity.this, "Please, first select a file to upload", Toast.LENGTH_SHORT).show();
                 }
             }
-        }));
+        })); */
         initImageLoader();
+        getFiles();
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
+                && data != null && data.getData() != null )
+        {
+            mSelectedFileUrl = data.getData();
+            FileName = data.getType();
+            executeUploadTask();
+
+        }
+    }
+    private void getFiles() {
+        reference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                list = new ArrayList<>();
+                for (DataSnapshot dataSnapshot1 : dataSnapshot.getChildren()) {
+                    Files s = dataSnapshot1.getValue(Files.class);
+                    list.add(s);
+                }
+                adapter = new FilesAdapter(ClassroomActivity.this, list);
+                mRecyclerView.setAdapter(adapter);
+
+            }
+
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Toast.makeText(ClassroomActivity.this, "Opsss.... Something is wrong", Toast.LENGTH_SHORT).show();
+
+            }
+        });
     }
 
     /*
      * Upload process of the classroom files
      */
-    @Override
+   /* @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         //Results when selecting new image from phone memory
         if (requestCode == FILE_SELECT_CODE && resultCode == Activity.RESULT_OK) {
             Uri selectedImageUri = data.getData();
+             FileName = data.getType();
             Log.d(TAG, "onActivityResult: image: " + selectedImageUri);
 
         }
-    }
+    } */
 
     //This method is used to start the upload task to the firebase storage
     private void executeUploadTask() {
-        showProgressBar();
+
+
+      //  showProgressBar();
 
         //specify where the photo will be stored
         /*TODO this StorageReference replaces pdf files uploaded to the storage, separate paths needs to be given to each files
          *TODO --> So that the files wont replace each other on the Firebase storage
          *TODO --> You may change the storage directory to suit your taste
          */
-        final StorageReference storageReference = FirebaseStorage.getInstance().getReference()
-                .child("classroom/" + Math.random() * 100000 + mSelectedFileUri.getPathSegments().get(0) + ".pdf");
+
+
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setTitle("Uploading...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        final StorageReference ref = FirebaseStorage.getInstance().getReference()
+                .child("classroom_files/" + Math.random() * 100000 + mSelectedFileUrl.getPathSegments().get(0) );
+        UploadTask uploadTask = ref.putFile(mSelectedFileUrl);
+        Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            @Override
+            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                if (!task.isSuccessful()) {
+                    throw task.getException();
+                }
+                return ref.getDownloadUrl();
+            }
+        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+            @Override
+            public void onComplete(@NonNull Task<Uri> task) {
+                if (task.isSuccessful()) {
+                    final Uri downloadUri = task.getResult();
+                    FileUrl = downloadUri.toString();
+                    FilePath = downloadUri.getPath();
+                    progressDialog.dismiss();
+                    sendFileDetailsToFirestore(UserName, FileName, FileUrl, FilePath, date);
+                }
+            }
+        })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        progressDialog.dismiss();
+                        Toast.makeText(ClassroomActivity.this, "Failed "+e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+        uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                double progress = (100.0*taskSnapshot.getBytesTransferred()/taskSnapshot
+                        .getTotalByteCount());
+                progressDialog.setMessage("Uploaded "+(int)progress+"%");
+                //progressDialog.dismiss();
+            }
+        });
+    }
+
+    private void sendFileDetailsToFirestore(String UserName, String FileName, String FileUrl, String FilePath, long date) {
+        displayLoader();
+        //generating a random string
+        Random r = new java.util.Random ();
+        String s = Long.toString (r.nextLong () & Long.MAX_VALUE, 36);
+            Files file = new Files(UserName, FileName, FileUrl, FilePath, date);
+            mDatabase.child("files").child(s).setValue(file)
+
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            pDialog.dismiss();
+                            Toast.makeText(ClassroomActivity.this, "File added successfully", Toast.LENGTH_SHORT).show();
+                            finish();
+                            overridePendingTransition(0, 0);
+                            startActivity(getIntent());
+                            overridePendingTransition(0, 0);
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            pDialog.dismiss();
+                            Toast.makeText(ClassroomActivity.this, "An error has occured" + e.toString(), Toast.LENGTH_LONG).show();
+                        }
+          
+                    });
+        }
+        
+        
+        private void displayLoader() {
+            pDialog = new ProgressDialog(ClassroomActivity.this);
+            pDialog.setMessage("Adding File.. Please wait...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(false);
+            pDialog.show();
+
+        }
+
+    
+
+       /* final StorageReference storageReference = FirebaseStorage.getInstance().getReference()
+                .child("classroom/" + Math.random() * 100000 + mSelectedFileUrl.getPathSegments().get(0) );
 
         // Create file metadata including the content type
         StorageMetadata metadata = new StorageMetadata.Builder()
@@ -122,17 +288,17 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
 
         //if the file size is valid then we can submit to database
         UploadTask uploadTask = null;
-        uploadTask = storageReference.putFile(mSelectedFileUri, metadata);
+        uploadTask = storageReference.putFile(mSelectedFileUrl, metadata);
         //uploadTask = storageReference.putBytes(mBytes); //without metadata
 
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 //Now insert the download url into the firebase database
-                //Task<Uri> firebaseURL = taskSnapshot.getStorage().getDownloadUrl();
+                Task<Uri> firebaseURL = taskSnapshot.getStorage().getDownloadUrl();
                 Toast.makeText(ClassroomActivity.this, "Upload Success", Toast.LENGTH_SHORT).show();
                 okay = true;
-                //mSelectedFileUri = null;
+                //mSelectedFileUrl = null;
                 //Log.d("newTag", "onSuccess: firebase download url = " + firebaseURL.toString());
 //                FirebaseDatabase.getInstance().getReference()
 //                        .child(getString(R.string.dbnode_users))
@@ -158,7 +324,8 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
                 }
             }
         });
-    }
+        */
+
 
 
     /**
@@ -185,7 +352,8 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
             startActivity(intent);
             finish();
         } else {
-            Log.d("TAG", "User is Authenticated.");
+            Log.d("TAG", "Users is Authenticated.");
+           
         }
     }
 
@@ -197,7 +365,9 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-
+                    userId = user.getUid();
+                    mDatabase = FirebaseDatabase.getInstance().getReference();
+                    getUserDetails();
                     Log.d("TAG", "onAuthStateChanged:signed_in:" + user.getUid());
 
                 } else {
@@ -210,6 +380,29 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
             }
         };
     }
+
+    private void getUserDetails() {
+            try {
+                mDatabase.child("users").child(userId).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        User details = dataSnapshot.getValue(User.class);
+                        UserName = details.getName();
+                       // phone = details.getPhone();
+                       // email = details.getEmail();
+
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            }catch (Exception e){
+                Toast.makeText(ClassroomActivity.this, "Error occured" + e.toString(), Toast.LENGTH_LONG).show();
+            }
+        }
+
 
     @Override
     public void onStart() {
@@ -256,8 +449,25 @@ public class ClassroomActivity extends AppCompatActivity implements UploadFileDi
                 return true;
             case R.id.quiz:
                 Log.d("TAG", "Settings Button Clicked!");
-                Intent quizIntent = new Intent(ClassroomActivity.this, QuizActivity.class);
-                startActivity(quizIntent);
+                users.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            Users user = dataSnapshot.child(userId).getValue(Users.class);
+                                Intent intent = new Intent(ClassroomActivity.this, QuizActivity.class);
+                                Common.currentUsers = user;
+                                startActivity(intent);
+
+                            }
+
+
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+
+
             default:
                 return super.onOptionsItemSelected(item);
         }

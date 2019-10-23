@@ -47,6 +47,7 @@ public class UploadFileDialog extends DialogFragment {
         //Results when selecting new image from phone memory
         if (requestCode == FILE_SELECT_CODE && resultCode == Activity.RESULT_OK) {
             Uri selectedFileUri = data.getData();
+            String FileName = data.getType();
             Log.d(TAG, "onActivityResult: image: " + selectedFileUri);
 
             //send the fileuri and fragment to the interface
