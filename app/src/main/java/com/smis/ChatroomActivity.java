@@ -288,12 +288,12 @@ public class ChatroomActivity extends AppCompatActivity {
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-                    // User is signed in
+                    // Users is signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
 
 
                 } else {
-                    // User is signed out
+                    // Users is signed out
                     Log.d(TAG, "onAuthStateChanged:signed_out");
                     Toast.makeText(ChatroomActivity.this, "Signed out", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(ChatroomActivity.this, LoginActivity.class);
