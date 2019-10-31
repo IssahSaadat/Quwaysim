@@ -41,33 +41,32 @@ import com.smis.utilities.FilesAdapter;
 import com.smis.utilities.UniversalImageLoader;
 import com.smis.utilities.User;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 
-public class ClassroomActivity extends AppCompatActivity{
+public class ClassroomActivity extends AppCompatActivity {
+    private final int PICK_IMAGE_REQUEST = 71;
+    private String mSecL;
     int FILE_SELECT_CODE = 0;
     ProgressBar mProgressBar;
     Boolean okay = false;
     StorageReference sReference = FirebaseStorage.getInstance().getReference();
-
+    String UserName, userId, FileUrl, FileName, FilePath;
+    ArrayList<Files> list;
+    FilesAdapter adapter;
+    DatabaseReference users;
+    DatabaseReference category;
     private String TAG = "ClassroomActivity";
     private FirebaseAuth.AuthStateListener mAuthListener;
     private Uri mSelectedFileUrl;
     private double progress;
     private RecyclerView mRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
-    String UserName, userId, FileUrl, FileName, FilePath;
     private DatabaseReference mDatabase, reference;
     private FirebaseDatabase firebaseDatabase;
     private ProgressDialog pDialog;
     private long date;
-    ArrayList<Files> list;
-    FilesAdapter adapter;
-    private final int PICK_IMAGE_REQUEST = 71;
-    DatabaseReference users;
-    DatabaseReference category;
 
    /* @Override
     public void getFilePath(Uri filePath) {
@@ -77,6 +76,7 @@ public class ClassroomActivity extends AppCompatActivity{
             //ImageLoader.getInstance().displayImage(filePath.toString(), mProfile_image);
         }
     } */
+   FloatingActionButton select_file;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +86,7 @@ public class ClassroomActivity extends AppCompatActivity{
         setupFirebaseAuth();
         reference = FirebaseDatabase.getInstance().getReference().child("files");
         FloatingActionButton upload_file = findViewById(R.id.upload_file_fab);
-        FloatingActionButton select_file = findViewById(R.id.select_file_fab);
+        select_file = findViewById(R.id.select_file_fab);
 
         users = FirebaseDatabase.getInstance().getReference("users");
         mProgressBar = findViewById(R.id.upload_progressBar);
@@ -101,6 +101,7 @@ public class ClassroomActivity extends AppCompatActivity{
         date = new Date().getTime();
 
 
+
         select_file.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -113,6 +114,7 @@ public class ClassroomActivity extends AppCompatActivity{
                 //dialog.show(getSupportFragmentManager(), getString(R.string.dialog_upload_file));
             }
         });
+
         /*upload_file.setOnClickListener((new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,21 +125,24 @@ public class ClassroomActivity extends AppCompatActivity{
                 }
             }
         })); */
+
         initImageLoader();
         getFiles();
+
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
-                && data != null && data.getData() != null )
-        {
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
+                && data != null && data.getData() != null) {
             mSelectedFileUrl = data.getData();
             FileName = data.getType();
             executeUploadTask();
 
         }
     }
+
     private void getFiles() {
         reference.addValueEventListener(new ValueEventListener() {
             @Override
@@ -181,7 +186,7 @@ public class ClassroomActivity extends AppCompatActivity{
     private void executeUploadTask() {
 
 
-      //  showProgressBar();
+        //  showProgressBar();
 
         //specify where the photo will be stored
         /*TODO this StorageReference replaces pdf files uploaded to the storage, separate paths needs to be given to each files
@@ -196,7 +201,7 @@ public class ClassroomActivity extends AppCompatActivity{
         progressDialog.show();
 
         final StorageReference ref = FirebaseStorage.getInstance().getReference()
-                .child("classroom_files/" + Math.random() * 100000 + mSelectedFileUrl.getPathSegments().get(0) );
+                .child("classroom_files/" + Math.random() * 100000 + mSelectedFileUrl.getPathSegments().get(0));
         UploadTask uploadTask = ref.putFile(mSelectedFileUrl);
         Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
             @Override
@@ -222,15 +227,15 @@ public class ClassroomActivity extends AppCompatActivity{
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         progressDialog.dismiss();
-                        Toast.makeText(ClassroomActivity.this, "Failed "+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ClassroomActivity.this, "Failed " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
         uploadTask.addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                double progress = (100.0*taskSnapshot.getBytesTransferred()/taskSnapshot
+                double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot
                         .getTotalByteCount());
-                progressDialog.setMessage("Uploaded "+(int)progress+"%");
+                progressDialog.setMessage("Uploaded " + (int) progress + "%");
                 //progressDialog.dismiss();
             }
         });
@@ -239,41 +244,41 @@ public class ClassroomActivity extends AppCompatActivity{
     private void sendFileDetailsToFirestore(String UserName, String FileName, String FileUrl, String FilePath, long date) {
         displayLoader();
         //generating a random string
-        Random r = new java.util.Random ();
-        String s = Long.toString (r.nextLong () & Long.MAX_VALUE, 36);
-            Files file = new Files(UserName, FileName, FileUrl, FilePath, date);
-            mDatabase.child("files").child(s).setValue(file)
+        Random r = new java.util.Random();
+        String s = Long.toString(r.nextLong() & Long.MAX_VALUE, 36);
+        Files file = new Files(UserName, FileName, FileUrl, FilePath, date);
+        mDatabase.child("files").child(s).setValue(file)
 
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            pDialog.dismiss();
-                            Toast.makeText(ClassroomActivity.this, "File added successfully", Toast.LENGTH_SHORT).show();
-                            finish();
-                            overridePendingTransition(0, 0);
-                            startActivity(getIntent());
-                            overridePendingTransition(0, 0);
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            pDialog.dismiss();
-                            Toast.makeText(ClassroomActivity.this, "An error has occured" + e.toString(), Toast.LENGTH_LONG).show();
-                        }
-          
-                    });
-        }
-        
-        
-        private void displayLoader() {
-            pDialog = new ProgressDialog(ClassroomActivity.this);
-            pDialog.setMessage("Adding File.. Please wait...");
-            pDialog.setIndeterminate(false);
-            pDialog.setCancelable(false);
-            pDialog.show();
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        pDialog.dismiss();
+                        Toast.makeText(ClassroomActivity.this, "File added successfully", Toast.LENGTH_SHORT).show();
+                        finish();
+                        overridePendingTransition(0, 0);
+                        startActivity(getIntent());
+                        overridePendingTransition(0, 0);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        pDialog.dismiss();
+                        Toast.makeText(ClassroomActivity.this, "An error has occured" + e.toString(), Toast.LENGTH_LONG).show();
+                    }
 
-        }
+                });
+    }
+
+
+    private void displayLoader() {
+        pDialog = new ProgressDialog(ClassroomActivity.this);
+        pDialog.setMessage("Adding File.. Please wait...");
+        pDialog.setIndeterminate(false);
+        pDialog.setCancelable(false);
+        pDialog.show();
+
+    }
 
     
 
@@ -327,7 +332,6 @@ public class ClassroomActivity extends AppCompatActivity{
         */
 
 
-
     /**
      * init universal image loader
      */
@@ -353,7 +357,7 @@ public class ClassroomActivity extends AppCompatActivity{
             finish();
         } else {
             Log.d("TAG", "Users is Authenticated.");
-           
+
         }
     }
 
@@ -382,26 +386,35 @@ public class ClassroomActivity extends AppCompatActivity{
     }
 
     private void getUserDetails() {
-            try {
-                mDatabase.child("users").child(userId).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        User details = dataSnapshot.getValue(User.class);
-                        UserName = details.getName();
-                       // phone = details.getPhone();
-                       // email = details.getEmail();
+        try {
+            mDatabase.child("users").child(userId).addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    User details = dataSnapshot.getValue(User.class);
+                    UserName = details.getName();
+                    // phone = details.getPhone();
+                    // email = details.getEmail();
 
+                    //get user securityLevel here
+                    mSecL = details.getSecurity_level();
+                    if (!mSecL.equals("2")){
+                        select_file.hide();
                     }
+                    //mNewSecurityLevel = Integer.parseInt(details.getSecurity_level());
+                    //Toast.makeText(ClassroomActivity.this, " Classroom SL: " + mSecL, Toast.LENGTH_SHORT).show();
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                    }
-                });
-            }catch (Exception e){
-                Toast.makeText(ClassroomActivity.this, "Error occured" + e.toString(), Toast.LENGTH_LONG).show();
-            }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        } catch (Exception e) {
+            Toast.makeText(ClassroomActivity.this, "Error occured" + e.toString(), Toast.LENGTH_LONG).show();
         }
+    }
 
 
     @Override
@@ -420,59 +433,6 @@ public class ClassroomActivity extends AppCompatActivity{
         //isActivityRunning = false;
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.sign_out:
-                FirebaseAuth.getInstance().signOut();
-                Log.d("TAG", "Signed Out Btn Clicked");
-                //Intent intent = new Intent(ClassroomActivity.this, LoginActivity.class);
-                //startActivity(intent);
-                //checkAuthenticationState();
-                return true;
-            case R.id.chat:
-                Log.d("TAG", "Chat Button Clicked");
-                Intent intent = new Intent(ClassroomActivity.this, ChatActivity.class);
-                startActivity(intent);
-                return true;
-            case R.id.settings:
-                Log.d("TAG", "Settings Button Clicked!");
-                Intent settingsIntent = new Intent(ClassroomActivity.this, SettingsActivity.class);
-                startActivity(settingsIntent);
-                return true;
-            case R.id.quiz:
-                Log.d("TAG", "Settings Button Clicked!");
-                users.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            Users user = dataSnapshot.child(userId).getValue(Users.class);
-                                Intent intent = new Intent(ClassroomActivity.this, QuizActivity.class);
-                                Common.currentUsers = user;
-                                startActivity(intent);
-
-                            }
-
-
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-
-
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
     public void showProgressBar() {
         mProgressBar.setVisibility(View.VISIBLE);
     }
@@ -483,9 +443,64 @@ public class ClassroomActivity extends AppCompatActivity{
         }
     }
 
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        MenuInflater inflater = getMenuInflater();
+//        inflater.inflate(R.menu.menu, menu);
+//        return true;
+//    }
 
-
-
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        switch (item.getItemId()) {
+//            case R.id.sign_out:
+//                FirebaseAuth.getInstance().signOut();
+//                Log.d("TAG", "Signed Out Btn Clicked");
+//                //Intent intent = new Intent(ClassroomActivity.this, LoginActivity.class);
+//                //startActivity(intent);
+//                //checkAuthenticationState();
+//                return true;
+//            case R.id.automata:
+//                Log.d(TAG, "onOptionsItemSelected: automata");
+//                Intent automata = new Intent(ClassroomActivity.this, AutomataSimulatorActivity.class);
+//                startActivity(automata);
+//                return true;
+//            case R.id.chat:
+//                Log.d("TAG", "Chat Button Clicked");
+//                Intent intent = new Intent(ClassroomActivity.this, ChatActivity.class);
+//                startActivity(intent);
+//                return true;
+//            case R.id.settings:
+//                Log.d("TAG", "Settings Button Clicked!");
+//                Intent settingsIntent = new Intent(ClassroomActivity.this, SettingsActivity.class);
+//                startActivity(settingsIntent);
+//                return true;
+//            case R.id.quiz:
+//                Log.d("TAG", "Quiz Button Clicked!");
+//                users.addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                        Users user = dataSnapshot.child(userId).getValue(Users.class);
+//                        Intent intent = new Intent(ClassroomActivity.this, QuizActivity.class);
+//                        //TODO
+//                        Common.currentUsers = user;
+//                        startActivity(intent);
+//
+//                    }
+//
+//
+//                    @Override
+//                    public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//                    }
+//                });
+//
+//
+//            default:
+//                return super.onOptionsItemSelected(item);
+//        }
+//    }
+    
 
     /*
      * This method here is for testing purposes only
@@ -510,5 +525,36 @@ public class ClassroomActivity extends AppCompatActivity{
 //            }
 //        });
 //        return downloadURL;
+//    }
+
+
+
+
+//    private void getUserDetails() {
+//        try {
+//            mDatabase.child("users").child(userId).addValueEventListener(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                    User details = dataSnapshot.getValue(User.class);
+//                    UserName = details.getName();
+//                  
+//                    //get user securityLevel here
+//                    mSecL = details.getSecurity_level();
+//                    //mNewSecurityLevel = Integer.parseInt(details.getSecurity_level());
+//                    Toast.makeText(ClassroomActivity.this, "SL: " + mSecL, Toast.LENGTH_SHORT).show();
+//
+//                    // phone = details.getPhone();
+//                    // email = details.getEmail();
+//
+//                }
+//
+//                @Override
+//                public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//                }
+//            });
+//        } catch (Exception e) {
+//            //Toast.makeText(HomeActivity.this, "Error occured" + e.toString(), Toast.LENGTH_LONG).show();
+//        }
 //    }
 }
